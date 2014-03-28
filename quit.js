@@ -1,6 +1,6 @@
 var util = require('util');
 var EventSource = require('./event_source');
-var observe = require('./observe');
+var observe = require('./util').observe;
 
 var Button = function(label) {
   this.label = label;
