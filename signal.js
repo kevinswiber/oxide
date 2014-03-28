@@ -17,36 +17,38 @@ Signal.prototype.now = function() {
 };
 
 var Var = function(val) {
-  return new Signal(function() { return val; });
+  this.signal = new Signal(function() { return val; });
+  this.source = this.signal.source;
+};
+
+Var.prototype.apply = function(val) {
+  this.signal.apply(function() { return val });
+  return this;
+};
+
+Var.prototype.now  = function() {
+  return this.signal.now();
 };
 
 var signal = function(deps, expr) {
-  var es = new EventSource();
+  var s = new Signal(expr);
 
   for (var i = 0; i < deps.length; i++) {
-    observe(deps[i].source, function(val) {
-      es.emit(expr());
+    observe(deps[i].source, function() {
+      s.apply(expr);
     });
   }
 
-  es.emit(expr());
-  return es;
+  return s;
 };
 
-var a = Var(1);
-var b = Var(2);
+var a = new Var(1);
+var b = new Var(2);
 
-var sum = signal([a, b], function() {
+var c = signal([a, b], function() {
   return a.now() + b.now();
 });
 
-setTimeout(function() {
-  a.apply(function() { return 4; });
-}, 200);
-
-observe(sum, function(x) {
-  console.log(x);
-});
-
-b.apply(function() { return 5; });
-console.log(b.now());
+console.log(c.now());
+a.apply(4);
+console.log(c.now());
