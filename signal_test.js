@@ -6,7 +6,7 @@ var signal = util.signal;
 var a = Var.create(1);
 var b = Var.create(2);
 
-var c = util.signal([a, b], function() {
+var c = signal([a, b], function() {
   return a.now() + b.now();
 });
 
