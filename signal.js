@@ -18,4 +18,3 @@ Signal.prototype.now = function() {
 Signal.create = function(valFn) {
   return new Signal(valFn);
 };
-

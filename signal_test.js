@@ -17,4 +17,3 @@ observe(a.changes, function(val) {
 console.log(c.now());
 a.apply(4);
 console.log(c.now());
-

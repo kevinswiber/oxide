@@ -1,7 +1,10 @@
+var Observer = require('./observer');
+
 var EventSource = module.exports = function() {
   this.observers = [];
   this.buffer = [];
   this.transforms = [];
+  this.current = null;
 };
 
 EventSource.prototype.emit = function(val) {
@@ -15,6 +18,7 @@ EventSource.prototype.emit = function(val) {
           val = transform(val);
         })
 
+        self.current = val;
         observer.next(val);
       }
     });
@@ -68,6 +72,18 @@ EventSource.prototype.clone = function() {
   es.transforms = this.transforms;
 
   return es;
+};
+
+EventSource.prototype.hold = function() {
+  var Var = require('./var');
+  var held = Var.create(this.current);
+  var observer = Observer.create(this);
+
+  observer.subscribe(function(val) {
+    held.apply(val);
+  });
+
+  return held;
 };
 
 EventSource.create = function() {
