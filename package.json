@@ -1,0 +1,23 @@
+{
+  "name": "oxide",
+  "version": "0.0.1",
+  "description": "Reactive JavaScript",
+  "main": "event_source.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/kevinswiber/oxide.git"
+  },
+  "keywords": [
+    "reactive",
+    "functional"
+  ],
+  "author": "Kevin Swiber <kswiber@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kevinswiber/oxide/issues"
+  },
+  "homepage": "https://github.com/kevinswiber/oxide"
+}
