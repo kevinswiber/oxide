@@ -2,7 +2,7 @@
   "name": "oxide",
   "version": "0.0.1",
   "description": "Reactive JavaScript",
-  "main": "event_source.js",
+  "main": "oxide.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

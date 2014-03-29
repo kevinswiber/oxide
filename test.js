@@ -1,12 +1,11 @@
-var EventSource = require('./event_source');
-var observe = require('./observe');
+var oxide = require('./');
 
-var es = new EventSource();
+var es = oxide.createEventSource();
 
 es.emit(1);
 es.emit(2);
 
-var ob = observe(es, function(val) {
+var ob = oxide.observe(es, function(val) {
   console.log('Receiving', val);
 });
 
@@ -14,12 +13,12 @@ ob.dispose();
 
 var Button = function(label) {
   this.label = label;
-  this.clicks = new EventSource();
+  this.clicks = oxide.createEventSource();
 };
 
 var quitButton = new Button('quit');
 
-observe(quitButton.clicks, function(x) {
+oxide.observe(quitButton.clicks, function(x) {
   process.exit();
 });
 

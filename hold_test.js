@@ -1,7 +1,6 @@
-var observe = require('./util').observe;
-var EventSource = require('./event_source');
+var oxide = require('./');
 
-var es = EventSource.create();
+var es = oxide.createEventSource();
 
 var count = 0x60;
 var interval = setInterval(function() {

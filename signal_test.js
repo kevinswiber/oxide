@@ -1,16 +1,13 @@
-var util = require('./util');
-var Var = require('./var');
-var observe = util.observe;
-var signal = util.signal;
+var oxide = require('./oxide');
 
-var a = Var.create(1);
-var b = Var.create(2);
+var a = oxide.createVar(1);
+var b = oxide.createVar(2);
 
-var c = signal([a, b], function() {
+var c = oxide.signal([a, b], function() {
   return a.now() + b.now();
 });
 
-observe(a.changes, function(val) {
+oxide.observe(a.changes, function(val) {
   console.log('changing value of a:', val);
 });
 

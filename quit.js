@@ -1,20 +1,19 @@
 var util = require('util');
-var EventSource = require('./event_source');
-var observe = require('./util').observe;
+var oxide = require('./');
 
 var Button = function(label) {
   this.label = label;
-  this.clicks = new EventSource();
+  this.clicks = oxide.createEventSource();
 };
 
 var MenuItem = function(label) {
   this.label = label;
-  this.clicks = new EventSource();
+  this.clicks = oxide.createEventSource();
 };
 
 var UIApp = function() {
   if (this.quit) {
-    observe(this.quit, function(val) {
+    oxide.observe(this.quit, function(val) {
       console.log('quitting, val:', val);
       process.exit();
     });
@@ -24,17 +23,17 @@ var UIApp = function() {
 var MyApp = function() {
   this.quitButton = new Button('quit');
   this.quitMenu = new MenuItem('quit');
-  this.fatalExceptions = new EventSource();
+  this.fatalExceptions = oxide.createEventSource();
 
-  observe(this.fatalExceptions, function(err) {
+  oxide.observe(this.fatalExceptions, function(err) {
     console.log('error:', err);
   });
 
-  observe(this.quitButton.clicks, function(x) {
+  oxide.observe(this.quitButton.clicks, function(x) {
     console.log('quit button, clicks:', x);
   });
 
-  observe(this.quitMenu.clicks, function(x) {
+  oxide.observe(this.quitMenu.clicks, function(x) {
     console.log('quit menu, clicks:', x);
   });
 
