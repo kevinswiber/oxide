@@ -1,4 +1,4 @@
-var oxide = require('./');
+var oxide = require('../');
 
 var es = oxide.createEventSource();
 

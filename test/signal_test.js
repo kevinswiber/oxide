@@ -1,4 +1,4 @@
-var oxide = require('./oxide');
+var oxide = require('../');
 
 var a = oxide.createVar(1);
 var b = oxide.createVar(2);

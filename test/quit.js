@@ -1,5 +1,5 @@
 var util = require('util');
-var oxide = require('./');
+var oxide = require('../');
 
 var Button = function(label) {
   this.label = label;
