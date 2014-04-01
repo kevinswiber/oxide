@@ -1,24 +1,19 @@
 var Observer = require('./observer');
 
 var EventSource = module.exports = function() {
-  this.observers = [];
-  this.buffer = [];
-  this.transforms = [];
+  this._observers = [];
+  this._buffer = [];
   this.Var = require('./var');
   this.pulse;
 };
 
 EventSource.prototype.emit = function(val) {
-  if (!this.observers.length) {
-    this.buffer.push(val);
+  if (!this._observers.length) {
+    this._buffer.push(val);
   } else {
     var self = this;
-    this.observers.forEach(function(observer) {
+    this._observers.forEach(function(observer) {
       if (observer.next) {
-        self.transforms.forEach(function(transform) {
-          val = transform(val);
-        })
-
         this.pulse = val;
         observer.next(val);
       }
@@ -27,12 +22,15 @@ EventSource.prototype.emit = function(val) {
 };
 
 EventSource.prototype.addObserver = function(observer) {
-  this.observers.push(observer);
+  this._observers.push(observer);
+  this.flush();
+};
 
+EventSource.prototype.flush = function() {
   var self = this;
-  if (this.buffer.length) {
-    while (self.buffer.length) {
-      var val = self.buffer.shift();
+  if (this._buffer.length) {
+    while (self._buffer.length) {
+      var val = self._buffer.shift();
       self.emit(val);
     }
   }
@@ -40,14 +38,14 @@ EventSource.prototype.addObserver = function(observer) {
 
 EventSource.prototype.removeObserver = function(observer) {
   var disposeOf = null;
-  this.observers.forEach(function(ob, i) {
+  this._observers.forEach(function(ob, i) {
     if (ob === observer) {
       disposeOf = i;
     }
   });
 
   if (disposeOf !== null) {
-    this.observers.splice(disposeOf);
+    this._observers.splice(disposeOf);
   }
 };
 
@@ -57,11 +55,117 @@ EventSource.prototype.merge = function(source) {
 };
 
 EventSource.prototype.map = function(mapper) {
-  var es = new EventSource();
+  return this._react(function(emit, val) {
+    emit(mapper(val));
+  });
+};
+
+EventSource.prototype.filter = function(filter) {
+  return this._react(function(emit, val) {
+    if (filter(val)) {
+      emit(val);
+    }
+  });
+};
+
+EventSource.prototype.take = function(count) {
+  return this._react(function(emit, val) {
+    if (count > 0) {
+      count--;
+      emit(val);
+    } else {
+      this.disposeSoon();
+    }
+  });
+};
+
+EventSource.prototype.drop = function(count) {
+  return this._react(function(emit, val) {
+    if (count > 0) {
+      count--;
+    } else {
+      emit(val);
+    }
+  });
+};
+
+EventSource.prototype.buffer = function(count) {
+  var arr;
+  return this._react(function(emit, val) {
+    if (!arr) {
+      arr = [];
+    }
+
+    arr.push(val);
+
+    if (arr.length === count) {
+      emit(arr);
+      arr = [];
+    }
+  });
+};
+
+EventSource.prototype.zip = function(/* combine..., fn */) {
+  var es = EventSource.create();
+
+  var combine = Array.prototype.slice.call(arguments);
+  var fn = null;
+
+  if (typeof combine[combine.length - 1] === 'function') {
+    fn = combine.pop();
+  }
+
+  var results = { self: [] };
+  var initialized = 0;
+
+  var sendResult = function() {
+    if (initialized === combine.length && results.self.length) {
+      var result = [];
+      result.push(results.self.shift());
+
+      for (var j = 0; j < combine.length; j++) {
+        result.push(results[j].shift());
+      }
+
+      if (fn) {
+        result = fn(result)
+      }
+
+      es.emit(result);
+    }
+  };
+
+  var observer = Observer.create(this);
+  observer.subscribe(function(val) {
+    results.self.push(val);
+    sendResult();
+  });
+
+  for (var i = 0; i < combine.length; i++) {
+    var innerObserver = Observer.create(combine[i]);
+
+    innerObserver.subscribe(function(val) {
+      if (!results[i]) {
+        results[i] = [];
+        initialized++;
+      }
+
+      results[i].push(val);
+
+      sendResult();
+    });
+  }
+
+  return es;
+};
+
+EventSource.prototype._react = function(fn) {
+  var es = EventSource.create();
 
   var observer = Observer.create(this); 
   observer.subscribe(function(val) {
-    es.emit(mapper(val));
+    var emit = es.emit.bind(es);
+    fn.call(es, emit, val)
   });
 
   return es;
@@ -69,9 +173,8 @@ EventSource.prototype.map = function(mapper) {
 
 EventSource.prototype.clone = function() {
   var es = new EventSource();
-  es.buffer = this.buffer;
-  es.observers = this.observers;
-  es.transforms = this.transforms;
+  es._buffer = this._buffer;
+  es._observers = this._observers;
 
   return es;
 };
@@ -85,6 +188,16 @@ EventSource.prototype.hold = function(initial) {
   });
 
   return held;
+};
+
+EventSource.prototype.dispose = function() {
+  this._observers = [];
+  this.pulse = null;
+  this._buffer = [];
+};
+
+EventSource.prototype.disposeSoon = function() {
+  process.nextTick(this.dispose.bind(this));
 };
 
 EventSource.create = function() {
