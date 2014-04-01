@@ -1,26 +1,26 @@
 var oxide = require('../');
 
-var es = oxide.createEventSource();
-var es2 = oxide.createEventSource();
-var es3 = oxide.createEventSource();
+var letters = oxide.createEventSource();
+var numbers = oxide.createEventSource();
+var buffers = oxide.createEventSource();
 
-es.emit('a');
-es.emit('b');
-es.emit('c');
+letters.emit('a');
+letters.emit('b');
+letters.emit('c');
 
-es2.emit(1);
-es2.emit(2);
-es2.emit(3);
+numbers.emit(1);
+numbers.emit(2);
+numbers.emit(3);
 
-es3.emit(new Buffer('hi'));
-es3.emit(new Buffer('there'));
-es3.emit(new Buffer('reactive'));
+buffers.emit(new Buffer('hi'));
+buffers.emit(new Buffer('there'));
+buffers.emit(new Buffer('reactive'));
 
-var zipped = es.zip(es2, es3, function(result) {
+var zipped = letters.zip(numbers, buffers, function(letter, number, buffer) {
   return {
-    letter: result[0],
-    number: result[1],
-    buffer: result[2]
+    letter: letter,
+    number: number,
+    buffer: buffer
   };
 });
 

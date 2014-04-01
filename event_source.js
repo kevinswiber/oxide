@@ -79,7 +79,7 @@ EventSource.prototype.take = function(count) {
   });
 };
 
-EventSource.prototype.drop = function(count) {
+EventSource.prototype.skip = function(count) {
   return this._react(function(emit, val) {
     if (count > 0) {
       count--;
@@ -128,7 +128,7 @@ EventSource.prototype.zip = function(/* combine..., fn */) {
       }
 
       if (fn) {
-        result = fn(result)
+        result = fn.apply(null, result)
       }
 
       es.emit(result);
