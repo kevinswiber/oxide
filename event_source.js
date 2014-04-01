@@ -79,6 +79,10 @@ EventSource.prototype.take = function(count) {
   });
 };
 
+EventSource.prototype.first = function() {
+  return this.take(1);
+};
+
 EventSource.prototype.skip = function(count) {
   return this._react(function(emit, val) {
     if (count > 0) {
