@@ -11,4 +11,3 @@ var first = es.first();
 oxide.observe(first, function(val) {
   console.log(val);
 });
-
