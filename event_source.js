@@ -128,6 +128,10 @@ EventSource.prototype.zip = function(/* combine..., fn */) {
       result.push(results.self.shift());
 
       for (var j = 0; j < combine.length; j++) {
+        if (!results[j]) {
+          return;
+        }
+
         result.push(results[j].shift());
       }
 
@@ -148,13 +152,14 @@ EventSource.prototype.zip = function(/* combine..., fn */) {
   for (var i = 0; i < combine.length; i++) {
     var innerObserver = Observer.create(combine[i]);
 
+    var idx = i;
     innerObserver.subscribe(function(val) {
-      if (!results[i]) {
-        results[i] = [];
+      if (!results[idx]) {
+        results[idx] = [];
         initialized++;
       }
 
-      results[i].push(val);
+      results[idx].push(val);
 
       sendResult();
     });
