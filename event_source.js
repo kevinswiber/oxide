@@ -4,7 +4,8 @@ var EventSource = module.exports = function() {
   this.observers = [];
   this.buffer = [];
   this.transforms = [];
-  this.current = null;
+  this.Var = require('./var');
+  this.pulse;
 };
 
 EventSource.prototype.emit = function(val) {
@@ -18,7 +19,7 @@ EventSource.prototype.emit = function(val) {
           val = transform(val);
         })
 
-        self.current = val;
+        this.pulse = val;
         observer.next(val);
       }
     });
@@ -56,10 +57,11 @@ EventSource.prototype.merge = function(source) {
 };
 
 EventSource.prototype.map = function(mapper) {
-  var es = this.clone();
+  var es = new EventSource();
 
-  es.transforms.push(function(val) {
-    return mapper(val);
+  var observer = Observer.create(this); 
+  observer.subscribe(function(val) {
+    es.emit(mapper(val));
   });
 
   return es;
@@ -74,9 +76,8 @@ EventSource.prototype.clone = function() {
   return es;
 };
 
-EventSource.prototype.hold = function() {
-  var Var = require('./var');
-  var held = Var.create(this.current);
+EventSource.prototype.hold = function(initial) {
+  var held = this.Var.create(initial);
   var observer = Observer.create(this);
 
   observer.subscribe(function(val) {
