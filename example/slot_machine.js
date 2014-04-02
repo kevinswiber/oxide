@@ -1,28 +1,44 @@
 var readline = require('readline');
 var oxide = require('../');
 
-console.log('-----------------------------');
-console.log('- THE REACTIVE SLOT MACHINE -');
-console.log('------ WIN A BANANA ---------');
-console.log('');
-console.log('Commands are:');
-console.log('   coin    - insert a coin');
-console.log('   play    - play one game');
-console.log('   quit    - quit the program');
-console.log('');
+var coinEventSource = oxide.createEventSource();
+var playEventSource = oxide.createEventSource();
+var winEventSource = oxide.createEventSource();
+var rollEventSource = oxide.createEventSource();
+var mayPlayEventSource = oxide.createEventSource();
+var doesPlayEventSource = oxide.createEventSource();
+var deniedEventSource = oxide.createEventSource();
+
+oxide.observe(mayPlayEventSource, function(val) {
+  if (val) {
+    doesPlayEventSource.emit();
+  } else {
+    deniedEventSource.emit();
+  }
+});
+
+function showHelp() {
+  console.log('-----------------------------');
+  console.log('- THE REACTIVE SLOT MACHINE -');
+  console.log('------ WIN A BANANA ---------');
+  console.log('');
+  console.log('Commands are:');
+  console.log('   coin    - insert a coin');
+  console.log('   play    - play one game');
+  console.log('   help    - show this message');
+  console.log('   quit    - quit the program');
+  console.log('');
+};
 
 var prompt = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 });
 
-var coinEventSource = oxide.createEventSource();
-var playEventSource = oxide.createEventSource();
-
 var last = null;
 var loop = function() {
-  prompt.question('> ', function(answer) {
-    switch (answer) {
+  var handle = function(command) {
+    switch (command) {
       case 'coin':
         last = 'coin';
         coinEventSource.emit();
@@ -37,53 +53,99 @@ var loop = function() {
         process.exit();
         break;
       case '':
-        if (last === 'coin') {
-          coinEventSource.emit();
-        } else if (last === 'play') {
-          playEventSource.emit();
-        }
+        handle(last)
         loop();
         break;
+      case 'help':
+      case null:
+        showHelp();
+        loop()
+        break;
       default:
-        console.log(answer + ' - unknown command');
+        last = null;
+        console.log(command + ' - unknown command');
         loop();
     }
+  };
+
+  prompt.question('> ', function(answer) {
+    handle(answer);
   });
 };
 
 var credits = oxide.createVar(0);
+var creditsEventSource = coinEventSource.map(addCredit(credits))
+  .merge(doesPlayEventSource.map(removeCredit(credits)))
+  .merge(winEventSource.map(addWin(credits)));
 
-var mayPlay = oxide.signal([credits], function() {
-  return credits.now() > 0;
+function addCredit(credits) {
+  return function() {
+    credits.apply(credits.now() + 1);
+    return credits;
+  };
+};
+
+function removeCredit(credits) {
+  return function() {
+    credits.apply(credits.now() - 1);
+    return credits;
+  };
+}
+
+function addWin(credits) {
+  return function(type) {
+    if (type === 'double') {
+      credits.apply(credits.now() + 5);
+    } else if (type === 'triple') {
+      credits.apply(credits.now() + 20);
+    }
+
+    return credits;
+  };
+};
+
+oxide.observe(playEventSource, function(val) {
+  mayPlayEventSource.emit((credits.now() > 0));
 });
 
 var roll = function() {
   return Math.floor(Math.random() * 7) + 1;
 };
 
-oxide.observe(coinEventSource, function(val) {
-  credits.apply(credits.now() + 1);
-  console.log('Credits:', credits.now());
+oxide.observe(doesPlayEventSource, function(val) {
+  rollEventSource.emit([roll(), roll(), roll()]);
 });
 
-oxide.observe(playEventSource, function(val) {
-  if (mayPlay.now()) {
-    credits.apply(credits.now() - 1);
-    var z1 = roll();
-    var z2 = roll();
-    var z3 = roll();
-    console.log('You rolled:', z1, z2, z3);
-    if (z1 == z2 && z2 == z3) {
-      console.log('Wowwowow! A triple! So awesome!');
-      credits.apply(credits.now() + 20);
-    } else if (z1 === z2 || z1 === z3 || z2 === z3) {
-      console.log('Wow, a double!');
-      credits.apply(credits.now() + 5);
-    }
-  } else {
-    console.log('Not enough credits!');
+oxide.observe(rollEventSource, function(val) {
+  var z1 = val[0]
+  var z2 = val[1];
+  var z3 = val[2];
+  if (z1 == z2 && z2 == z3) {
+    winEventSource.emit('triple');
+  } else if (z1 === z2 || z1 === z3 || z2 === z3) {
+    winEventSource.emit('double');
   }
-  console.log('Credits:', credits.now());
 });
 
+oxide.observe(creditsEventSource, function(val) {
+  console.log('Credits:', val.now());
+});
+
+oxide.observe(rollEventSource, function(val) {
+  console.log('You rolled:', val[0], val[1], val[2]);
+});
+
+oxide.observe(winEventSource, function(type) {
+  if (type === 'triple') {
+    console.log('Wowwowow! A triple! So awesome!');
+  } else if (type === 'double') {
+      console.log('Wow, a double!');
+  }
+});
+
+oxide.observe(deniedEventSource, function(val) {
+  console.log('Not enough credits!');
+});
+
+showHelp();
 loop();

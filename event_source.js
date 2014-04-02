@@ -224,7 +224,12 @@ EventSource.create = function() {
 var AggregateEventSource = function(left, right) {
   this.left = left;
   this.right = right;
+  this.Var = require('./var');
 };
+
+Object.keys(EventSource.prototype).forEach(function(key) {
+  AggregateEventSource.prototype[key] = EventSource.prototype[key];
+});
 
 AggregateEventSource.prototype.emit = function(val) {
   this.left.emit(val);
