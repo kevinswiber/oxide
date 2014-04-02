@@ -1,6 +1,16 @@
 var readline = require('readline');
 var oxide = require('../');
 
+console.log('-----------------------------');
+console.log('- THE REACTIVE SLOT MACHINE -');
+console.log('------ WIN A BANANA ---------');
+console.log('');
+console.log('Commands are:');
+console.log('   coin    - insert a coin');
+console.log('   play    - play one game');
+console.log('   quit    - quit the program');
+console.log('');
+
 var prompt = readline.createInterface({
   input: process.stdin,
   output: process.stdout
