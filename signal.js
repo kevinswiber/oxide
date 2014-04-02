@@ -12,7 +12,9 @@ Signal.prototype.apply = function(valFn) {
 };
 
 Signal.prototype.now = function() {
-  return this.valFn();
+  var val = this.valFn();
+  this.previous = val;
+  return val;
 };
 
 Signal.create = function(valFn) {
