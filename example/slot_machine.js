@@ -19,19 +19,30 @@ var prompt = readline.createInterface({
 var coinEventSource = oxide.createEventSource();
 var playEventSource = oxide.createEventSource();
 
+var last = null;
 var loop = function() {
   prompt.question('> ', function(answer) {
     switch (answer) {
       case 'coin':
+        last = 'coin';
         coinEventSource.emit();
         loop();
         break;
       case 'play':
+        last = 'play';
         playEventSource.emit();
         loop();
         break;
       case 'quit':
         process.exit();
+        break;
+      case '':
+        if (last === 'coin') {
+          coinEventSource.emit();
+        } else if (last === 'play') {
+          playEventSource.emit();
+        }
+        loop();
         break;
       default:
         console.log(answer + ' - unknown command');
@@ -47,7 +58,7 @@ var mayPlay = oxide.signal([credits], function() {
 });
 
 var roll = function() {
-  return Math.floor(Math.random() * 4) + 1;
+  return Math.floor(Math.random() * 7) + 1;
 };
 
 oxide.observe(coinEventSource, function(val) {
