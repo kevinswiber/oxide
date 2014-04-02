@@ -168,6 +168,14 @@ EventSource.prototype.zip = function(/* combine..., fn */) {
   return es;
 };
 
+EventSource.prototype.scan = function(init, fn) {
+  var acc = init;
+  return this._react(function(emit, val) {
+    acc = fn(acc, val);
+    emit(acc);
+  });
+};
+
 EventSource.prototype._react = function(fn) {
   var es = EventSource.create();
 
