@@ -8,6 +8,7 @@ var rollEventSource = oxide.createEventSource();
 var mayPlayEventSource = oxide.createEventSource();
 var doesPlayEventSource = oxide.createEventSource();
 var deniedEventSource = oxide.createEventSource();
+var endEventSource = oxide.createEventSource();
 
 oxide.observe(mayPlayEventSource, function(val) {
   if (val) {
@@ -74,34 +75,28 @@ var loop = function() {
 };
 
 var credits = oxide.createVar(0);
-var creditsEventSource = coinEventSource.map(addCredit(credits))
-  .merge(doesPlayEventSource.map(removeCredit(credits)))
-  .merge(winEventSource.map(addWin(credits)));
+var creditsEventSource = coinEventSource.map(addCredit)
+  .merge(doesPlayEventSource.map(removeCredit))
+  .merge(winEventSource.map(addWin));
 
-function addCredit(credits) {
-  return function() {
-    credits.apply(credits.now() + 1);
-    return credits;
-  };
+function addCredit() {
+  credits.apply(credits.now() + 1);
+  return credits;
 };
 
-function removeCredit(credits) {
-  return function() {
-    credits.apply(credits.now() - 1);
-    return credits;
-  };
+function removeCredit() {
+  credits.apply(credits.now() - 1);
+  return credits;
 }
 
-function addWin(credits) {
-  return function(type) {
-    if (type === 'double') {
-      credits.apply(credits.now() + 5);
-    } else if (type === 'triple') {
-      credits.apply(credits.now() + 20);
-    }
+function addWin(type) {
+  if (type === 'double') {
+    credits.apply(credits.now() + 5);
+  } else if (type === 'triple') {
+    credits.apply(credits.now() + 20);
+  }
 
-    return credits;
-  };
+  return credits;
 };
 
 oxide.observe(playEventSource, function(val) {
@@ -117,6 +112,10 @@ oxide.observe(doesPlayEventSource, function(val) {
 });
 
 oxide.observe(rollEventSource, function(val) {
+  console.log('You rolled:', val[0], val[1], val[2]);
+});
+
+oxide.observe(rollEventSource, function(val) {
   var z1 = val[0]
   var z2 = val[1];
   var z3 = val[2];
@@ -124,15 +123,17 @@ oxide.observe(rollEventSource, function(val) {
     winEventSource.emit('triple');
   } else if (z1 === z2 || z1 === z3 || z2 === z3) {
     winEventSource.emit('double');
+  } else {
+    endEventSource.emit();
   }
 });
 
-oxide.observe(creditsEventSource, function(val) {
-  console.log('Credits:', val.now());
+oxide.observe(coinEventSource, function() {
+  endEventSource.emit();
 });
 
-oxide.observe(rollEventSource, function(val) {
-  console.log('You rolled:', val[0], val[1], val[2]);
+oxide.observe(endEventSource, function() {
+  console.log('Credits:', credits.now());
 });
 
 oxide.observe(winEventSource, function(type) {
@@ -141,10 +142,13 @@ oxide.observe(winEventSource, function(type) {
   } else if (type === 'double') {
       console.log('Wow, a double!');
   }
+
+  endEventSource.emit();
 });
 
 oxide.observe(deniedEventSource, function(val) {
   console.log('Not enough credits!');
+  endEventSource.emit();
 });
 
 showHelp();
