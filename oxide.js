@@ -7,6 +7,9 @@ var observe = exports.observe = function observe(es, next) {
   return observer.subscribe(next);
 };
 
+exports.EventSource = require('./event_source');
+exports.Var = require('./var');
+
 exports.signal = function signal(deps, expr) {
   if (typeof deps === 'function') {
     expr = deps;

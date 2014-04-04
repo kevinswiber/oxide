@@ -1,16 +1,18 @@
 var readline = require('readline');
 var oxide = require('../');
+var EventSource = oxide.EventSource;
+var Var = oxide.Var;
 
-var coinEvents = oxide.createEventSource();
-var playEvents = oxide.createEventSource();
-var winEvents = oxide.createEventSource();
-var rollEvents = oxide.createEventSource();
-var mayPlayEvents = oxide.createEventSource();
-var doesPlayEvents = oxide.createEventSource();
-var deniedEvents = oxide.createEventSource();
-var endEvents = oxide.createEventSource();
+var coinEvents = EventSource.create();
+var playEvents = EventSource.create();
+var winEvents = EventSource.create();
+var rollEvents = EventSource.create();
+var mayPlayEvents = EventSource.create();
+var doesPlayEvents = EventSource.create();
+var deniedEvents = EventSource.create();
+var endEvents = EventSource.create();
 
-oxide.observe(mayPlayEvents, function(val) {
+mayPlayEvents.subscribe(function(val) {
   if (val) {
     doesPlayEvents.emit();
   } else {
@@ -74,7 +76,7 @@ var loop = function() {
   });
 };
 
-var credits = oxide.createVar(0);
+var credits = Var.create(0);
 var creditsEvents = coinEvents.map(addCredit)
   .merge(doesPlayEvents.map(removeCredit))
   .merge(winEvents.map(addWin));
@@ -99,7 +101,7 @@ function addWin(type) {
   return credits;
 };
 
-oxide.observe(playEvents, function() {
+playEvents.subscribe(function() {
   mayPlayEvents.emit((credits.now() > 0));
 });
 
@@ -107,15 +109,15 @@ function roll() {
   return Math.floor(Math.random() * 7) + 1;
 };
 
-oxide.observe(doesPlayEvents, function(val) {
+doesPlayEvents.subscribe(function(val) {
   rollEvents.emit([roll(), roll(), roll()]);
 });
 
-oxide.observe(rollEvents, function(val) {
+rollEvents.subscribe(function(val) {
   console.log('You rolled:', val[0], val[1], val[2]);
 });
 
-oxide.observe(rollEvents, function(val) {
+rollEvents.subscribe(function(val) {
   var z1 = val[0]
   var z2 = val[1];
   var z3 = val[2];
@@ -128,15 +130,15 @@ oxide.observe(rollEvents, function(val) {
   }
 });
 
-oxide.observe(coinEvents, function() {
+coinEvents.subscribe(function() {
   endEvents.emit();
 });
 
-oxide.observe(endEvents, function() {
+endEvents.subscribe(function() {
   console.log('Credits:', credits.now());
 });
 
-oxide.observe(winEvents, function(type) {
+winEvents.subscribe(function(type) {
   if (type === 'triple') {
     console.log('Wowwowow! A triple! So awesome!');
   } else if (type === 'double') {
@@ -146,7 +148,7 @@ oxide.observe(winEvents, function(type) {
   endEvents.emit();
 });
 
-oxide.observe(deniedEvents, function(val) {
+deniedEvents.subscribe(function(val) {
   console.log('Not enough credits!');
   endEvents.emit();
 });

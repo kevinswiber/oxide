@@ -217,6 +217,11 @@ EventSource.prototype.disposeSoon = function() {
   process.nextTick(this.dispose.bind(this));
 };
 
+EventSource.prototype.subscribe = function(next) {
+  var observer = Observer.create(this);
+  return observer.subscribe(next);
+};
+
 EventSource.create = function() {
   return new EventSource();
 };
