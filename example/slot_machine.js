@@ -77,7 +77,7 @@ var loop = function() {
 };
 
 var credits = Var.create(0);
-var creditsEvents = coinEvents.map(addCredit)
+coinEvents.map(addCredit)
   .merge(doesPlayEvents.map(removeCredit))
   .merge(winEvents.map(addWin));
 

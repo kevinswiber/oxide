@@ -4,6 +4,8 @@ var EventSource = module.exports = function() {
   this._observers = [];
   this._buffer = [];
   this.Var = require('./var');
+  this.dependents = [];
+  this.ondispose = null;
   this.pulse;
 };
 
@@ -19,6 +21,10 @@ EventSource.prototype.emit = function(val) {
       }
     });
   }
+};
+
+EventSource.prototype.dependsOn = function(observer) {
+  this.dependents.push(observer);
 };
 
 EventSource.prototype.addObserver = function(observer) {
@@ -47,6 +53,10 @@ EventSource.prototype.removeObserver = function(observer) {
   if (disposeOf !== null) {
     this._observers.splice(disposeOf);
   }
+
+  if (this._observers.length === 0) {
+    this.disposeSoon();
+  };
 };
 
 EventSource.prototype.merge = function(source) {
@@ -149,8 +159,12 @@ EventSource.prototype.zip = function(/* combine..., fn */) {
     sendResult();
   });
 
+  es.dependsOn(observer);
+
   for (var i = 0; i < combine.length; i++) {
     var innerObserver = Observer.create(combine[i]);
+
+    es.dependsOn(innerObserver);
 
     var idx = i;
     innerObserver.subscribe(function(val) {
@@ -180,10 +194,13 @@ EventSource.prototype._react = function(fn) {
   var es = EventSource.create();
 
   var observer = Observer.create(this); 
+
   observer.subscribe(function(val) {
     var emit = es.emit.bind(es);
     fn.call(es, emit, val)
   });
+
+  es.dependsOn(observer);
 
   return es;
 };
@@ -208,9 +225,17 @@ EventSource.prototype.hold = function(initial) {
 };
 
 EventSource.prototype.dispose = function() {
+  this.dependents.forEach(function(dependent) {
+    dependent.source.removeObserver(dependent);
+  });
+
   this._observers = [];
   this.pulse = null;
   this._buffer = [];
+  if (this.ondispose) {
+    this.ondispose();
+  }
+
 };
 
 EventSource.prototype.disposeSoon = function() {

@@ -31,6 +31,19 @@ exports.createVar = function(val) {
   return Var.create(val);
 };
 
-exports.createEventSource = function() {
+var createEventSource = exports.createEventSource = function() {
   return require('./event_source').create();
+};
+
+exports.timer = function(timespan) {
+  var es = createEventSource();
+  var id = setInterval(function() {
+    es.emit();
+  }, timespan);
+
+  es.ondispose = function() {
+    clearInterval(id);
+  };
+
+  return es;
 };
