@@ -190,6 +190,18 @@ EventSource.prototype.scan = function(init, fn) {
   });
 };
 
+EventSource.prototype.flatMap = function(fn) {
+  var self = this;
+  return this._react(function(emit, val, observer) {
+    var es = fn(val);
+    es.dependsOn(o);
+    var o = Observer.create(es);
+    o.subscribe(function(v) {
+      emit(v);
+    });
+  });
+};
+
 EventSource.prototype._react = function(fn) {
   var es = EventSource.create();
 
@@ -197,7 +209,7 @@ EventSource.prototype._react = function(fn) {
 
   observer.subscribe(function(val) {
     var emit = es.emit.bind(es);
-    fn.call(es, emit, val)
+    fn.call(es, emit, val, observer)
   });
 
   es.dependsOn(observer);
