@@ -1,6 +1,6 @@
 {
   "name": "oxide",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Reactive JavaScript",
   "main": "oxide.js",
   "scripts": {
