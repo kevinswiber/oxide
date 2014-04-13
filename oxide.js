@@ -47,3 +47,25 @@ exports.timer = function(timespan) {
 
   return es;
 };
+
+exports.range = function(start, count) {
+  var es = createEventSource();
+
+  var current = start;
+  while (count > 0) {
+    es.emit(current++);
+    count--;
+  }
+
+  return es;
+};
+
+exports.array = function(arr) {
+  var es = createEventSource();
+
+  arr.forEach(function(item) {
+    es.emit(item);
+  });
+
+  return es;
+};
