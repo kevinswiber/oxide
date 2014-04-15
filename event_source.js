@@ -6,6 +6,7 @@ var EventSource = module.exports = function() {
   this.Var = require('./var');
   this.dependents = [];
   this.ondispose = null;
+  this.onerror = null;
   this.pulse;
 };
 
@@ -21,6 +22,20 @@ EventSource.prototype.emit = function(val) {
       }
     });
   }
+};
+
+EventSource.prototype.throw = function(err) {
+  if (this.onerror) {
+    this.onerror(err);
+    return this;
+  } else {
+    throw err;
+  }
+};
+
+EventSource.prototype.catch = function(onerror) {
+  this.onerror = onerror;
+  return this;
 };
 
 EventSource.prototype.dependsOn = function(observer) {
