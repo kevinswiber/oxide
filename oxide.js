@@ -1,3 +1,4 @@
+var Stream = require('stream');
 var Observer = require('./observer');
 var Signal = require('./signal');
 var Var = require('./var');
@@ -99,5 +100,19 @@ var wrapCallback = function(/* fn, ...args */) {
   return es;
 };
 
-var wrapStream = function(stream) {
+var wrapStream = function(stream, bufferSize) {
+  var es = EventSource.create();
+
+  stream.on('readable', function() {
+    var data;
+    while (data = stream.read(bufferSize)) {
+      es.emit(data);
+    }
+  });
+
+  stream.on('end', function() {
+    es.dispose();
+  });
+
+  return es;
 };
