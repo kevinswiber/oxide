@@ -6,6 +6,7 @@ var EventSource = module.exports = function() {
   this.Var = require('./var');
   this.dependents = [];
   this.ondispose = null;
+  this.oncomplete = null;
   this.onerror = null;
   this.pulse;
 };
@@ -29,12 +30,20 @@ EventSource.prototype.throw = function(err) {
     this.onerror(err);
     return this;
   } else {
+    if (this.oncomplete) {
+      this.oncomplete();
+    }
     throw err;
   }
 };
 
 EventSource.prototype.catch = function(onerror) {
   this.onerror = onerror;
+  return this;
+};
+
+EventSource.prototype.finally = function(oncomplete) {
+  this.oncomplete = oncomplete;
   return this;
 };
 
@@ -252,6 +261,10 @@ EventSource.prototype.hold = function(initial) {
 };
 
 EventSource.prototype.dispose = function() {
+  if (this.oncomplete) {
+    this.oncomplete();
+  }
+
   this.dependents.forEach(function(dependent) {
     dependent.source.removeObserver(dependent);
   });
@@ -259,10 +272,10 @@ EventSource.prototype.dispose = function() {
   this._observers = [];
   this.pulse = null;
   this._buffer = [];
+
   if (this.ondispose) {
     this.ondispose();
   }
-
 };
 
 EventSource.prototype.disposeSoon = function() {
