@@ -7,6 +7,7 @@ var EventSource = module.exports = function() {
   this.dependents = [];
   this.ondispose = null;
   this.oncomplete = null;
+  this.onsuccess = null;
   this.onerror = null;
   this.pulse;
 };
@@ -28,13 +29,18 @@ EventSource.prototype.emit = function(val) {
 EventSource.prototype.throw = function(err) {
   if (this.onerror) {
     this.onerror(err);
-    return this;
   } else {
     if (this.oncomplete) {
       this.oncomplete();
     }
     throw err;
   }
+
+  this.dependents.forEach(function(observer) {
+    observer.throw(err);
+  });
+
+  return this;
 };
 
 EventSource.prototype.catch = function(onerror) {
@@ -214,6 +220,25 @@ EventSource.prototype.scan = function(init, fn) {
   });
 };
 
+EventSource.prototype.fold = function(init, fn) {
+  var es = EventSource.create();
+
+  var observer = Observer.create(this);
+
+  var acc = init;
+  observer.subscribe(function(val) {
+    acc = fn(acc, val);
+  });
+
+  this.onsuccess = function() {
+    es.emit(acc)
+  };
+
+  es.dependsOn(observer);
+
+  return es;
+};
+
 EventSource.prototype.flatMap = function(fn) {
   var self = this;
   return this._react(function(emit, val, observer) {
@@ -229,7 +254,7 @@ EventSource.prototype.flatMap = function(fn) {
 EventSource.prototype._react = function(fn) {
   var es = EventSource.create();
 
-  var observer = Observer.create(this); 
+  var observer = Observer.create(this);
 
   observer.subscribe(function(val) {
     var emit = es.emit.bind(es);
@@ -261,6 +286,10 @@ EventSource.prototype.hold = function(initial) {
 };
 
 EventSource.prototype.dispose = function() {
+  if (this.onsuccess) {
+    this.onsuccess();
+  }
+
   if (this.oncomplete) {
     this.oncomplete();
   }
@@ -269,13 +298,13 @@ EventSource.prototype.dispose = function() {
     dependent.source.removeObserver(dependent);
   });
 
-  this._observers = [];
-  this.pulse = null;
-  this._buffer = [];
-
   if (this.ondispose) {
     this.ondispose();
   }
+
+  this._observers = [];
+  this.pulse = null;
+  this._buffer = [];
 };
 
 EventSource.prototype.disposeSoon = function() {

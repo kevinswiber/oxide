@@ -68,6 +68,8 @@ exports.array = function(arr) {
     es.emit(item);
   });
 
+  es.disposeSoon();
+
   return es;
 };
 
