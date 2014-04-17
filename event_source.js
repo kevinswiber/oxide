@@ -213,6 +213,11 @@ EventSource.prototype.zip = function(/* combine..., fn */) {
 };
 
 EventSource.prototype.scan = function(init, fn) {
+  if (typeof init === 'function') {
+    fn = init;
+    init = null;
+  }
+
   var acc = init;
   return this._react(function(emit, val) {
     acc = fn(acc, val);
@@ -220,7 +225,13 @@ EventSource.prototype.scan = function(init, fn) {
   });
 };
 
-EventSource.prototype.fold = function(init, fn) {
+EventSource.prototype.fold =
+EventSource.prototype.reduce = function(init, fn) {
+  if (typeof init === 'function') {
+    fn = init;
+    init = null;
+  }
+
   var es = EventSource.create();
 
   var observer = Observer.create(this);
@@ -231,6 +242,39 @@ EventSource.prototype.fold = function(init, fn) {
   });
 
   this.onsuccess = function() {
+    es.emit(acc)
+  };
+
+  es.dependsOn(observer);
+
+  return es;
+};
+
+// inefficient for event streams
+EventSource.prototype.foldRight =
+EventSource.prototype.reduceRight =
+function(init, fn) {
+  if (typeof init === 'function') {
+    fn = init;
+    init = null;
+  }
+
+  var es = EventSource.create();
+
+  var observer = Observer.create(this);
+
+  var queue = [];
+  observer.subscribe(function(val) {
+    queue.push(val);
+  });
+
+  this.onsuccess = function() {
+    var acc = init;
+
+    while (queue.length) {
+      acc = fn(acc, queue.pop());
+    }
+
     es.emit(acc)
   };
 
